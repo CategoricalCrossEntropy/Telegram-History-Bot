@@ -1,5 +1,5 @@
 from aiogram import types
-from aiogram.dispatcher import filters
+from aiogram.dispatcher import filters, FSMContext
 
 import defines
 from database import sqlite_db
@@ -14,9 +14,9 @@ async def start(message: types.Message):
 
 @dp.message_handler(commands=["menu"])
 async def main_menu(message: types.Message):
-    texts = [defines.START_TRAIN]
-    callbacks = ["train_choose_theme"]
-    links = [None]
+    texts = [defines.START_TRAIN, defines.USER_PROFILE]
+    callbacks = ["train_choose_theme", "user_profile"]
+    links = [None, None]
     db_links = await sqlite_db.get_links()
     for link, text in db_links.items():
         texts.append(text)
@@ -24,3 +24,9 @@ async def main_menu(message: types.Message):
         callbacks.append(None)
     await message.answer(defines.GREETING, reply_markup=build_column_keyboard(texts, callbacks, links))
 
+
+@dp.callback_query_handler(text="cancel")
+async def _cancel(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete_reply_markup()
+    await state.finish()
+    await main_menu(callback.message)

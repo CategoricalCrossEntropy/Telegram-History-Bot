@@ -91,10 +91,3 @@ async def results(callback: types.CallbackQuery, state: FSMContext):
         result = defines.RESULT.format(data["correct_answers"], data["questions_asked"], data["user_hp"])
     await sqlite_db.set_user_hp(callback.from_user.id, data["user_hp"])
     await callback.message.answer(result, reply_markup=build_column_keyboard(answers, callbacks))
-
-
-@dp.callback_query_handler(text="cancel")
-async def _cancel(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete_reply_markup()
-    await state.finish()
-    await main_menu(callback.message)
