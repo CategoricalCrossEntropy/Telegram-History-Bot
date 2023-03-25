@@ -10,3 +10,7 @@ class EditStates(StatesGroup):
     questions_text_request = State()
     questions_del_num_request = State()
     new_links_request = State()
+    add_question = State()
+    add_category = State()
+    show_questions_choose_category = State()
+    add_machine_questions = State()

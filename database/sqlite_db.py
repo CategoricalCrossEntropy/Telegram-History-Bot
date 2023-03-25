@@ -100,26 +100,10 @@ async def get_questions_by_numbers(numbers: list):
     return questions
 
 
-async def add_list_of_questions(text, auto_detection=True):
-    text_list = list(text.split("\n"))
-    text_list = [i for i in text_list if i != ""]
-    current_string = "question"
-    question, answer, category = "", "", ""
-    for string in text_list:
-        if string.startswith("*"):
-            category = string.replace("*", "")[0]
-            continue
-        if current_string == "question":
-            question = string
-            current_string = "answer"
-        elif current_string == "answer":
-            answer = string.replace("–", "-")
-            current_string = "question"
-            if category == "" and auto_detection:
-                cat = await category_auto_detection(answer)
-                await add_question(question, answer, cat)
-            else:
-                await add_question(question, answer, category)
+async def add_list_of_questions(text):
+    for question in text.split("\n\n"):
+        category, question, answer = question.split("\n")
+        await add_question(question, answer, category)
 
 
 async def delete_several_questions(request):
@@ -127,3 +111,16 @@ async def delete_several_questions(request):
     questions = await get_questions_by_numbers(request)
     for q in questions:
         await delete_question_by_name(q)
+
+
+async def get_categories():
+    categories = cur.execute('SELECT DISTINCT category FROM questions WHERE category!="-"').fetchall()
+    if not categories:
+        return None
+    return [category[0] for category in categories]
+
+
+async def get_questions_by_category(category):
+    questions = cur.execute('''SELECT question, answer, category
+                                 FROM questions WHERE category="{}"'''.format(category)).fetchall()
+    return questions

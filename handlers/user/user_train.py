@@ -1,23 +1,33 @@
 from aiogram import types
-from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher import FSMContext, filters
 
 import defines
 from database import sqlite_db
 from handlers.main_menu import main_menu
 from init import dp
-from keyboards.keyboard_builder import build_column_keyboard
+from keyboards.keyboard_builder import build_column_keyboard, build_select_keyboard
 from scripts.false_answers_maker import get_variants
 
 
-@dp.callback_query_handler(text="train_9")
-async def init_train_9(callback: types.CallbackQuery, state: FSMContext):
-    await state.update_data(class_category=9)
-    await init_train(callback, state)
+@dp.callback_query_handler(text="train_choose_theme")
+async def user_choose_theme(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    themes = await sqlite_db.get_categories()
+    async with state.proxy() as data:
+        data["themes"] = themes
+    if not themes:
+        async with state.proxy() as data:
+            data["category"] = None
+        await init_train(callback, state)
+        return
+    await callback.message.answer(defines.CHOOSE_THEME_TO_REPEAT,
+                                  reply_markup=build_select_keyboard(themes, prefix="theme"))
 
 
-@dp.callback_query_handler(text="train_10")
-async def init_train_10(callback: types.CallbackQuery, state: FSMContext):
-    await state.update_data(class_category=10)
+@dp.callback_query_handler(filters.Text(startswith="theme"))
+async def call_init(callback: types.CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        data["category"] = data["themes"][int(callback.data.replace("theme", ""))]
     await init_train(callback, state)
 
 
@@ -25,10 +35,15 @@ async def init_train_10(callback: types.CallbackQuery, state: FSMContext):
 async def init_train(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     async with state.proxy() as data:
-        data["num_of_questions"] = defines.NUMBER_OF_QUESTIONS
         data["questions_asked"] = data["correct_answers"] = 0
-        category = 9 if data["class_category"] == 9 else None
-        several_questions = await sqlite_db.select_n_random_questions(defines.NUMBER_OF_QUESTIONS, category)
+        several_questions = await sqlite_db.select_n_random_questions(defines.NUMBER_OF_QUESTIONS,
+                                                                      category=data["category"])
+        if len(several_questions) == 0:
+            await callback.message.answer(defines.THERE_IS_NO_QUESTIONS_IN_DB)
+            await state.finish()
+            await main_menu(callback.message)
+            return
+        data["num_of_questions"] = min(len(several_questions), defines.NUMBER_OF_QUESTIONS)
         data["several_questions"] = several_questions
         data["user_hp"] = await sqlite_db.get_hp_by_user_id(callback.from_user.id)
     await train(callback, state)
@@ -37,13 +52,13 @@ async def init_train(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(text="train")
 async def train(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
-        if data["questions_asked"] >= defines.NUMBER_OF_QUESTIONS:
+        if data["questions_asked"] >= data["num_of_questions"]:
             await results(callback, state)
             return
         question, answer = data["several_questions"][data["questions_asked"]]
+        data["current_question"], data["current_answer"] = question, answer
         data["questions_asked"] += 1
-    answers, callbacks = await get_variants(answer, defines.NUMBER_OF_VARIANTS,
-                                            correct="correct", incorrect="incorrect")
+        answers, callbacks = await get_variants(answer, defines.NUMBER_OF_VARIANTS, "correct", "incorrect")
     answers.append(defines.BACK_TO_MENU)
     callbacks.append("cancel")
     await callback.message.answer(defines.ANSWER_THE_QUESTION + question,
@@ -54,9 +69,8 @@ async def train(callback: types.CallbackQuery, state: FSMContext):
 async def correct_answer(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     async with state.proxy() as data:
-        question, answer = data["several_questions"][data["questions_asked"]-1]
         data["correct_answers"] += 1
-    await callback.message.answer(defines.CORRECT.format(answer))
+        await callback.message.answer(defines.CORRECT.format(data["current_answer"]))
     await train(callback, state)
 
 
@@ -64,8 +78,7 @@ async def correct_answer(callback: types.CallbackQuery, state: FSMContext):
 async def incorrect_answer(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     async with state.proxy() as data:
-        question, answer = data["several_questions"][data["questions_asked"]-1]
-    await callback.message.answer(defines.INCORRECT.format(answer))
+        await callback.message.answer(defines.INCORRECT.format(data["current_answer"]))
     await train(callback, state)
 
 

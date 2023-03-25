@@ -38,10 +38,10 @@ async def admin_failed_auth(message: types.Message):
 async def admin_menu(message: types.Message):
     await EditStates.password_success.set()
     answers = [defines.ADMIN_MENU_SHOW, defines.ADMIN_MENU_ADD,
-               defines.ADMIN_MENU_DELETE, defines.ADMIN_MENU_MULTI_ADD,
+               defines.ADMIN_MENU_DELETE,
                defines.ADMIN_MENU_LINKS_EDIT, defines.CANCEL_COMMAND]
     callback = ["show_questions", "add_question",
-                "delete_question", "add_several_questions",
+                "delete_question",
                 "edit_links", "cancel"]
     await message.answer(defines.ADMIN_MENU_TEXT,
                          reply_markup=build_column_keyboard(answers, callback))
