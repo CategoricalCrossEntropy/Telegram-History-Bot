@@ -61,24 +61,28 @@ async def train(callback: types.CallbackQuery, state: FSMContext):
         answers, callbacks = await get_variants(answer, defines.NUMBER_OF_VARIANTS, "correct", "incorrect")
     answers.append(defines.BACK_TO_MENU)
     callbacks.append("cancel")
-    await callback.message.answer(defines.ANSWER_THE_QUESTION + question,
+    await callback.message.answer(defines.ANSWER_THE_QUESTION.format(question),
                                   reply_markup=build_column_keyboard(answers, callbacks))
 
 
 @dp.callback_query_handler(text="correct")
 async def correct_answer(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete_reply_markup()
+    await callback.message.delete()
     async with state.proxy() as data:
         data["correct_answers"] += 1
-        await callback.message.answer(defines.CORRECT.format(data["current_answer"]))
+        text = defines.ANSWER_THE_QUESTION.format(data["current_question"]) + "\n"
+        text += defines.CORRECT.format(data["current_answer"])
+        await callback.message.answer(text)
     await train(callback, state)
 
 
 @dp.callback_query_handler(text="incorrect")
 async def incorrect_answer(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete_reply_markup()
+    await callback.message.delete()
     async with state.proxy() as data:
-        await callback.message.answer(defines.INCORRECT.format(data["current_answer"]))
+        text = defines.ANSWER_THE_QUESTION.format(data["current_question"]) + "\n"
+        text += defines.INCORRECT.format(data["current_answer"])
+        await callback.message.answer(text)
     await train(callback, state)
 
 
