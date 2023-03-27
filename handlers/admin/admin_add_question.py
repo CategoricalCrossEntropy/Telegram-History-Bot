@@ -40,7 +40,7 @@ async def add_machine_questions_desc(message: types.Message):
 async def add_machine_questions(message: types.Message, state: FSMContext):
     for question in message.text.split("\n\n"):
         category, question, answer, *wrong_answers = question.split("\n")
-        await sqlite_db.add_question(question, answer, category)
+        await sqlite_db.add_question(question.rstrip(), answer.rstrip(), category.rstrip())
     await state.finish()
     await message.answer(defines.ADD_QUESTIONS_SUCCESS)
     await admin_menu(message)
