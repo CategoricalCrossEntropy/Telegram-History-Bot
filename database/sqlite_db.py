@@ -25,8 +25,8 @@ async def select_n_random_questions(n, category=None):
     if category is None:
         request = "SELECT question, answer FROM questions ORDER BY RANDOM() LIMIT {}".format(n)
     else:
-        request = "SELECT question, answer FROM questions WHERE category={} ORDER BY RANDOM() LIMIT {}".format(category,
-                                                                                                               n)
+        request = 'SELECT question, answer FROM questions WHERE category="{}" ' \
+                  'ORDER BY RANDOM() LIMIT {}'.format(category, n)
     questions = cur.execute(request).fetchall()
     return questions
 
