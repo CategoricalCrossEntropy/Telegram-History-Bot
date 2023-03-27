@@ -21,13 +21,17 @@ async def user_choose_theme(callback: types.CallbackQuery, state: FSMContext):
         await init_train(callback, state)
         return
     await callback.message.answer(defines.CHOOSE_THEME_TO_REPEAT,
-                                  reply_markup=build_select_keyboard(themes, prefix="theme"))
+                                  reply_markup=build_select_keyboard(themes, prefix="theme", add_select_all=True,
+                                                                     select_all_callback="theme_all"))
 
 
 @dp.callback_query_handler(filters.Text(startswith="theme"))
 async def call_init(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
-        data["category"] = data["themes"][int(callback.data.replace("theme", ""))]
+        if callback.data == "theme_all":
+            data["category"] = None
+        else:
+            data["category"] = data["themes"][int(callback.data.replace("theme", ""))]
     await init_train(callback, state)
 
 
