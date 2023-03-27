@@ -9,9 +9,16 @@ from states.admin_states import EditStates
 
 @dp.callback_query_handler(text="edit_links", state=EditStates.password_success)
 async def edit_links(callback: types.CallbackQuery):
-    await callback.message.delete_reply_markup()
+    await callback.message.delete()
     await EditStates.new_links_request.set()
-    await callback.message.answer(defines.ADMIN_EDIT_LINKS_DESCRIPTION)
+    links = await sqlite_db.get_links()
+    if not links:
+        await callback.message.answer(defines.ADMIN_EDIT_LINKS_DESCRIPTION.format(defines.LINKS_EXAMPLE))
+        return
+    links_column = defines.CURRENT_LINKS
+    for link, text in links.items():
+        links_column += "{}\n{}\n".format(link, text)
+    await callback.message.answer(defines.ADMIN_EDIT_LINKS_DESCRIPTION.format(links_column + "\n"))
 
 
 @dp.message_handler(state=EditStates.new_links_request)
