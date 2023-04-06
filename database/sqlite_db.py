@@ -11,6 +11,7 @@ def sql_start():
     base.execute('CREATE TABLE IF NOT EXISTS admin_id(id TEXT PRIMARY KEY)')
     base.execute('CREATE TABLE IF NOT EXISTS user(id TEXT PRIMARY KEY, hp INTEGER)')
     base.execute('CREATE TABLE IF NOT EXISTS links(link TEXT PRIMARY KEY, text TEXT)')
+    base.execute('CREATE TABLE IF NOT EXISTS users_tmp(id TEXT PRIMARY KEY)')
     base.commit()
 
 
@@ -124,3 +125,13 @@ async def get_questions_by_category(category):
     questions = cur.execute('''SELECT question, answer, category
                                  FROM questions WHERE category="{}"'''.format(category)).fetchall()
     return questions
+
+
+async def get_users_tmp():
+    ids = cur.execute('SELECT id FROM users_tmp').fetchall()
+    return [i[0] for i in ids]
+
+
+async def add_user_tmp(user_id):
+    cur.execute('INSERT INTO users_tmp VALUES ({})'.format(user_id))
+    base.commit()
