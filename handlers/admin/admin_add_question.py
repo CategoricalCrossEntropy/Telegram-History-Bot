@@ -2,7 +2,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 
 import defines
-from database import sqlite_db
+from db_requests import Questions_db
 from handlers.admin.admin_menu import admin_menu
 from init import dp
 from states.admin_states import EditStates
@@ -12,7 +12,7 @@ from states.admin_states import EditStates
 async def admin_add_question(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await EditStates.add_question.set()
-    categories = await sqlite_db.get_categories()
+    categories = await Questions_db.get_categories()
     async with state.proxy() as data:
         data["categories"] = categories
     if not categories:
@@ -40,7 +40,7 @@ async def add_machine_questions_desc(message: types.Message):
 async def add_machine_questions(message: types.Message, state: FSMContext):
     for question in message.text.split("\n\n"):
         category, question, answer, *wrong_answers = question.split("\n")
-        await sqlite_db.add_question(question.rstrip(), answer.rstrip(), category.rstrip())
+        await Questions_db.add_question(question.rstrip(), answer.rstrip(), category.rstrip())
     await state.finish()
     await message.answer(defines.ADD_QUESTIONS_SUCCESS)
     await admin_menu(message)
@@ -74,7 +74,7 @@ async def admin_add_answer(message: types.Message, state: FSMContext):
 async def admin_add_question_success(message: types.Message, state: FSMContext):
     answer = message.text
     async with state.proxy() as data:
-        await sqlite_db.add_question(data["question"], answer, data["category"])
+        await Questions_db.add_question(data["question"], answer, data["category"])
         text = defines.ADD_QUESTION_SUCCESS
         text += "{}({})\n✅{}\n".format(data["question"], data["category"], answer)
     await state.finish()

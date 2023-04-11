@@ -1,12 +1,11 @@
 from aiogram.utils import executor
 
-from database import sqlite_db
+import db_requests
 from init import dp
 import handlers
 
 
 async def on_startup(_):
-    sqlite_db.sql_start()
     handlers.register()
 
 

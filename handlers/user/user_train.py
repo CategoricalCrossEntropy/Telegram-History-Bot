@@ -1,18 +1,20 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext, filters
+from aiogram.utils.exceptions import MessageToEditNotFound
 
 import defines
-from database import sqlite_db
+from db_requests import Questions_db, Users_db
 from handlers.main_menu import main_menu
 from init import dp
 from keyboards.keyboard_builder import build_column_keyboard, build_select_keyboard
 from scripts.false_answers_maker import get_variants
 
 
+# todo: Красивая выдача списка тем
 @dp.callback_query_handler(text="train_choose_theme")
 async def user_choose_theme(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
-    themes = await sqlite_db.get_categories()
+    themes = await Questions_db.get_categories()
     async with state.proxy() as data:
         data["themes"] = themes
     if not themes:
@@ -37,11 +39,14 @@ async def call_init(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text="init_train")
 async def init_train(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete_reply_markup()
+    try:
+        await callback.message.delete_reply_markup()
+    except MessageToEditNotFound:
+        pass
     async with state.proxy() as data:
         data["questions_asked"] = data["correct_answers"] = 0
-        several_questions = await sqlite_db.select_n_random_questions(defines.NUMBER_OF_QUESTIONS,
-                                                                      category=data["category"])
+        several_questions = await Questions_db.select_n_random_questions(defines.NUMBER_OF_QUESTIONS,
+                                                                         category=data["category"])
         if len(several_questions) == 0:
             await callback.message.answer(defines.THERE_IS_NO_QUESTIONS_IN_DB)
             await state.finish()
@@ -49,7 +54,7 @@ async def init_train(callback: types.CallbackQuery, state: FSMContext):
             return
         data["num_of_questions"] = min(len(several_questions), defines.NUMBER_OF_QUESTIONS)
         data["several_questions"] = several_questions
-        data["user_hp"] = await sqlite_db.get_hp_by_user_id(callback.from_user.id)
+        data["user_hp"] = await Users_db.get_hp_by_user_id(callback.from_user.id)
     await train(callback, state)
 
 
@@ -97,5 +102,5 @@ async def results(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["user_hp"] += data["correct_answers"]
         result = defines.RESULT.format(data["correct_answers"], data["questions_asked"], data["user_hp"])
-    await sqlite_db.set_user_hp(callback.from_user.id, data["user_hp"])
+    await Users_db.set_user_hp(callback.from_user.id, data["user_hp"])
     await callback.message.answer(result, reply_markup=build_column_keyboard(answers, callbacks))

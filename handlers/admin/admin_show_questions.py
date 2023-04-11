@@ -2,7 +2,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 
 import defines
-from database import sqlite_db
+from db_requests import Questions_db
 from handlers.admin.admin_menu import admin_menu
 from init import dp
 from states.admin_states import EditStates
@@ -12,7 +12,7 @@ from states.admin_states import EditStates
 async def admin_choose_category(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await EditStates.show_questions_choose_category.set()
-    categories = await sqlite_db.get_categories()
+    categories = await Questions_db.get_categories()
     if not categories:
         await callback.message.answer(defines.SELECT_THE_CATEGORY)
         return
@@ -24,12 +24,13 @@ async def admin_choose_category(callback: types.CallbackQuery, state: FSMContext
     await callback.message.answer(cat_list)
 
 
+# todo: Показывать номер или id вопроса в категориях
 @dp.message_handler(state=EditStates.show_questions_choose_category, text="*")
 async def admin_show_questions(message: types.Message, state: FSMContext, category=None):
     if category is None:
-        questions = await sqlite_db.get_all_questions()
+        questions = await Questions_db.get_all_questions()
     else:
-        questions = await sqlite_db.get_questions_by_category(category)
+        questions = await Questions_db.get_questions_by_category(category)
     text = ""
     for i, qa in enumerate(questions):
         if category is not None:
@@ -50,7 +51,7 @@ async def admin_show_questions(message: types.Message, state: FSMContext, catego
 
 @dp.message_handler(state=EditStates.show_questions_choose_category, text="#")
 async def admin_show_machine_questions(message: types.Message, state: FSMContext):
-    questions = await sqlite_db.get_all_questions()
+    questions = await Questions_db.get_all_questions()
     text = ""
     for i, qa in enumerate(questions):
         msg = "{}\n{}\n{}\n\n".format(qa[2], qa[0], qa[1])
@@ -59,7 +60,10 @@ async def admin_show_machine_questions(message: types.Message, state: FSMContext
             text = msg
         else:
             text += msg
-    await message.answer(text)
+    if len(text) == 0:
+        await message.answer("В базе данных нет вопросов")
+    else:
+        await message.answer(text)
     await state.finish()
     await admin_menu(message)
 
