@@ -1,3 +1,4 @@
+from .achievements_db import Achievements
 from .admins_db import Admins
 from .links_db import Links
 from .codeword_db import Codeword
@@ -9,3 +10,4 @@ Links_db = Links()
 Questions_db = Questions()
 Users_db = Users()
 Codeword_db = Codeword()
+Achievements_db = Achievements()
