@@ -19,6 +19,6 @@ class Links:
         self.base.commit()
 
     async def get_links(self):
-        links = self.cur.execute('SELECT link, text FROM links')
+        links = self.cur.execute('SELECT link, text FROM links').fetchall()
         links = {i[0]: i[1] for i in links}
         return links

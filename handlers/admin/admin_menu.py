@@ -39,10 +39,10 @@ async def admin_menu(message: types.Message):
     await EditStates.password_success.set()
     answers = [defines.ADMIN_MENU_SHOW, defines.ADMIN_MENU_ADD,
                defines.ADMIN_MENU_DELETE,
-               defines.ADMIN_MENU_LINKS_EDIT, defines.CANCEL_COMMAND]
+               defines.ADMIN_MENU_LINKS_EDIT, defines.SET_CODEWORD, defines.CANCEL_COMMAND]
     callback = ["show_questions", "add_question",
                 "delete_question",
-                "edit_links", "cancel"]
+                "edit_links", "set_codeword", "cancel"]
     await message.answer(defines.ADMIN_MENU_TEXT,
                          reply_markup=build_column_keyboard(answers, callback))
 

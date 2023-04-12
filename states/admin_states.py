@@ -14,3 +14,4 @@ class EditStates(StatesGroup):
     add_category = State()
     show_questions_choose_category = State()
     add_machine_questions = State()
+    new_codeword_request = State()
