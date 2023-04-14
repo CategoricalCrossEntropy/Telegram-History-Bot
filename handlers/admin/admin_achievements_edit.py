@@ -13,8 +13,8 @@ async def edit_achievements(callback: types.CallbackQuery):
     await EditStates.new_achievements_request.set()
     achievements = await Achievements_db.get_all_achievements()
     current_column = ""
-    for description, link, hp_to_receive in achievements:
-        current_column += "{}\n{}\n{}\n\n".format(description, link, hp_to_receive)
+    for description, link, hp_to_receive, subject in achievements:
+        current_column += "{}\n{}\n{}\n{}\n\n".format(description, link, hp_to_receive, subject)
     await callback.message.answer(defines.ADMIN_EDIT_ACHIEVEMENTS_DESCRIPTION.format(current_column))
 
 
