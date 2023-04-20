@@ -8,6 +8,13 @@ from init import dp
 from states.admin_states import EditStates
 
 
+@dp.message_handler(text="0", state=[EditStates.add_question, EditStates.add_machine_questions,
+                                     EditStates.add_answer, EditStates.add_question_success])
+async def cancel(message: types.Message, state: FSMContext):
+    await state.finish()
+    await admin_menu(message)
+
+
 @dp.callback_query_handler(text="add_question", state=EditStates.password_success)
 async def admin_add_question(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
@@ -24,12 +31,6 @@ async def admin_add_question(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer(defines.ENTER_THE_CATEGORY.format(defines.ENTER_THE_CATEGORY_MANY) + cat_list)
 
 
-@dp.message_handler(state=EditStates.add_question, text="0")
-async def cancel(message: types.Message, state: FSMContext):
-    await state.finish()
-    await admin_menu(message)
-
-
 @dp.message_handler(state=EditStates.add_question, text="#")
 async def add_machine_questions_desc(message: types.Message):
     await message.answer(defines.ENTER_MACHINE_QUESTIONS)
@@ -43,7 +44,7 @@ async def add_machine_questions(message: types.Message, state: FSMContext):
         await Questions_db.add_question(question.rstrip(), answer.rstrip(), category.rstrip())
     await state.finish()
     await message.answer(defines.ADD_QUESTIONS_SUCCESS)
-    await admin_menu(message)
+    await add_machine_questions_desc(message)
 
 
 @dp.message_handler(state=EditStates.add_question)
