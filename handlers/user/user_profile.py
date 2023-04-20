@@ -41,9 +41,10 @@ async def see_achievements_by_subject(callback: types.CallbackQuery):
     achievements = await Achievements_db.get_achievements_by_subject_hp(hp, subject)
     answers, callbacks, links = [], [], []
     for i, (description, link, hp_to_receive, _) in enumerate(achievements):
-        answers.append("{} ({}⭐)".format(description, hp_to_receive))
-        callbacks.append(None)
-        links.append(link)
+        if link != "None":
+            answers.append("{} ({}⭐)".format(description, hp_to_receive))
+            callbacks.append(None)
+            links.append(link)
     answers.extend([defines.START_TRAIN, "Посмотреть все награды 🏅"])
     callbacks.extend(["train_choose_theme", "user_profile"])
     links.extend([None, None])
